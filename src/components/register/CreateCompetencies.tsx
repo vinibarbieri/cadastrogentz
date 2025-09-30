@@ -7,47 +7,47 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Briefcase, ArrowLeft, Plus, X } from "lucide-react";
+import { Target, ArrowLeft, Plus, X } from "lucide-react";
 
-const roleSchema = z.object({
-  title: z.string().min(2, "Título do cargo é obrigatório"),
-  level: z.string().min(1, "Nível é obrigatório"),
+const competencySchema = z.object({
+  title: z.string().min(2, "Título da competência é obrigatório"),
   team: z.string().optional(),
+  type: z.string().min(1, "Tipo é obrigatório"),
 });
 
-type RoleData = z.infer<typeof roleSchema>;
+type CompetencyData = z.infer<typeof competencySchema>;
 
-interface CreateRolesProps {
-  onNext: (data: { roles: RoleData[] }) => void;
+interface CreateCompetenciesProps {
+  onNext: (data: { competencies: CompetencyData[] }) => void;
   onBack: () => void;
   onSkip: () => void;
-  initialData: RoleData[];
+  initialData: CompetencyData[];
   teams: Array<{ name: string }>;
 }
 
-const CreateRoles = ({ onNext, onBack, onSkip, initialData, teams }: CreateRolesProps) => {
-  const [roles, setRoles] = useState<RoleData[]>(initialData);
+const CreateCompetencies = ({ onNext, onBack, onSkip, initialData, teams }: CreateCompetenciesProps) => {
+  const [competencies, setCompetencies] = useState<CompetencyData[]>(initialData);
   const {
     register,
     handleSubmit,
     reset,
     setValue,
     formState: { errors },
-  } = useForm<RoleData>({
-    resolver: zodResolver(roleSchema),
+  } = useForm<CompetencyData>({
+    resolver: zodResolver(competencySchema),
   });
 
-  const addRole = (data: RoleData) => {
-    setRoles([...roles, data]);
+  const addCompetency = (data: CompetencyData) => {
+    setCompetencies([...competencies, data]);
     reset();
   };
 
-  const removeRole = (index: number) => {
-    setRoles(roles.filter((_, i) => i !== index));
+  const removeCompetency = (index: number) => {
+    setCompetencies(competencies.filter((_, i) => i !== index));
   };
 
   const handleNext = () => {
-    onNext({ roles });
+    onNext({ competencies });
   };
 
   return (
@@ -55,35 +55,37 @@ const CreateRoles = ({ onNext, onBack, onSkip, initialData, teams }: CreateRoles
       <CardHeader className="space-y-1">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Briefcase className="w-5 h-5 text-primary" />
+            <Target className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-2xl">Criar Cargos</CardTitle>
+            <CardTitle className="text-2xl">Criar Competências</CardTitle>
             <CardDescription className="text-muted-foreground">
-              Defina os cargos da sua empresa (opcional)
+              Defina as competências necessárias (opcional)
             </CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {roles.length > 0 && (
+        {competencies.length > 0 && (
           <div className="space-y-3">
-            {roles.map((role, index) => (
+            {competencies.map((competency, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between p-4 bg-muted rounded-lg transition-colors"
               >
-              <div>
-                <p className="font-medium text-foreground">{role.title}</p>
-                <p className="text-sm text-muted-foreground">Nível: {role.level}</p>
-                {role.team && (
-                  <p className="text-xs text-muted-foreground">Time: {role.team}</p>
-                )}
-              </div>
+                <div>
+                  <p className="font-medium text-foreground">{competency.title}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Tipo: {competency.type === "technical" ? "Técnica" : "Comportamental"}
+                  </p>
+                  {competency.team && (
+                    <p className="text-xs text-muted-foreground">Time: {competency.team}</p>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => removeRole(index)}
+                  onClick={() => removeCompetency(index)}
                   className="transition-colors hover:text-destructive"
                 >
                   <X className="w-4 h-4" />
@@ -93,13 +95,13 @@ const CreateRoles = ({ onNext, onBack, onSkip, initialData, teams }: CreateRoles
           </div>
         )}
 
-        <form onSubmit={handleSubmit(addRole)} className="space-y-4">
+        <form onSubmit={handleSubmit(addCompetency)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Título do Cargo</Label>
+            <Label htmlFor="title">Título da Competência</Label>
             <Input
               id="title"
               {...register("title")}
-              placeholder="Ex: Gerente, Analista, Coordenador..."
+              placeholder="Ex: React, Liderança, Comunicação..."
               className="transition-colors"
             />
             {errors.title && (
@@ -108,15 +110,18 @@ const CreateRoles = ({ onNext, onBack, onSkip, initialData, teams }: CreateRoles
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="level">Nível</Label>
-            <Input
-              id="level"
-              {...register("level")}
-              placeholder="Ex: Júnior, Pleno, Sênior..."
-              className="transition-colors"
-            />
-            {errors.level && (
-              <p className="text-sm text-destructive">{errors.level.message}</p>
+            <Label htmlFor="type">Tipo</Label>
+            <Select onValueChange={(value) => setValue("type", value)}>
+              <SelectTrigger className="transition-colors">
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="technical">Técnica</SelectItem>
+                <SelectItem value="behavioral">Comportamental</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.type && (
+              <p className="text-sm text-destructive">{errors.type.message}</p>
             )}
           </div>
 
@@ -138,7 +143,7 @@ const CreateRoles = ({ onNext, onBack, onSkip, initialData, teams }: CreateRoles
 
           <Button type="submit" variant="outline" className="w-full transition-colors">
             <Plus className="w-4 h-4 mr-2" />
-            Adicionar Cargo
+            Adicionar Competência
           </Button>
         </form>
 
@@ -161,7 +166,7 @@ const CreateRoles = ({ onNext, onBack, onSkip, initialData, teams }: CreateRoles
             Pular esta etapa
           </Button>
           <Button onClick={handleNext} className="flex-1 transition-colors">
-            Finalizar
+            Continuar
           </Button>
         </div>
       </CardContent>
@@ -169,4 +174,4 @@ const CreateRoles = ({ onNext, onBack, onSkip, initialData, teams }: CreateRoles
   );
 };
 
-export default CreateRoles;
+export default CreateCompetencies;

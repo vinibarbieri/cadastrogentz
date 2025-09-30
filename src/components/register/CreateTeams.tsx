@@ -11,7 +11,9 @@ import { UserPlus, ArrowLeft, Plus, X } from "lucide-react";
 
 const teamSchema = z.object({
   name: z.string().min(2, "Nome do time é obrigatório"),
-  description: z.string().optional(),
+  objectives: z.string().optional(),
+  location: z.string().optional(),
+  parentTeam: z.string().optional(),
 });
 
 type TeamData = z.infer<typeof teamSchema>;
@@ -70,12 +72,18 @@ const CreateTeams = ({ onNext, onBack, onSkip, initialData }: CreateTeamsProps) 
                 key={index}
                 className="flex items-center justify-between p-4 bg-muted rounded-lg transition-colors"
               >
-                <div>
-                  <p className="font-medium text-foreground">{team.name}</p>
-                  {team.description && (
-                    <p className="text-sm text-muted-foreground">{team.description}</p>
-                  )}
-                </div>
+              <div>
+                <p className="font-medium text-foreground">{team.name}</p>
+                {team.objectives && (
+                  <p className="text-sm text-muted-foreground">{team.objectives}</p>
+                )}
+                {team.location && (
+                  <p className="text-xs text-muted-foreground">Localização: {team.location}</p>
+                )}
+                {team.parentTeam && (
+                  <p className="text-xs text-muted-foreground">Time Pai: {team.parentTeam}</p>
+                )}
+              </div>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -104,13 +112,33 @@ const CreateTeams = ({ onNext, onBack, onSkip, initialData }: CreateTeamsProps) 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição (opcional)</Label>
+            <Label htmlFor="objectives">Objetivos (opcional)</Label>
             <Textarea
-              id="description"
-              {...register("description")}
-              placeholder="Descreva as responsabilidades do time..."
+              id="objectives"
+              {...register("objectives")}
+              placeholder="Descreva os objetivos do time..."
               rows={3}
               className="transition-colors resize-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location">Localização (opcional)</Label>
+            <Input
+              id="location"
+              {...register("location")}
+              placeholder="Ex: São Paulo, Remoto..."
+              className="transition-colors"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="parentTeam">Time Pai (opcional)</Label>
+            <Input
+              id="parentTeam"
+              {...register("parentTeam")}
+              placeholder="Nome do time pai, se houver"
+              className="transition-colors"
             />
           </div>
 

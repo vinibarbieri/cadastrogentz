@@ -6,12 +6,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Users, ArrowLeft, Plus, X } from "lucide-react";
+import { toast } from "sonner";
 
 const collaboratorSchema = z.object({
   name: z.string().min(2, "Nome é obrigatório"),
-  email: z.string().email("E-mail inválido"),
-  role: z.string().min(2, "Função é obrigatória"),
+  role: z.string().min(1, "Cargo é obrigatório"),
+  team: z.string().optional(),
+  manager: z.string().optional(),
+  email: z.string().optional(),
+  password: z.string().optional(),
+  hasLogin: z.boolean(),
+}).refine((data) => {
+  if (data.hasLogin) {
+    return data.email && data.password;
+  }
+  return true;
+}, {
+  message: "Email e senha são obrigatórios para colaboradores com login",
+  path: ["email"],
 });
 
 type CollaboratorData = z.infer<typeof collaboratorSchema>;
@@ -21,24 +36,34 @@ interface AddCollaboratorsProps {
   onBack: () => void;
   onSkip: () => void;
   initialData: CollaboratorData[];
+  roles: Array<{ title: string }>;
+  teams: Array<{ name: string }>;
 }
 
-const AddCollaborators = ({ onNext, onBack, onSkip, initialData }: AddCollaboratorsProps) => {
+const AddCollaborators = ({ onNext, onBack, onSkip, initialData, roles, teams }: AddCollaboratorsProps) => {
   const [collaborators, setCollaborators] = useState<CollaboratorData[]>(initialData);
+  const [hasLogin, setHasLogin] = useState(false);
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CollaboratorData>({
     resolver: zodResolver(collaboratorSchema),
+    defaultValues: { hasLogin: false },
   });
 
+  const loginCollaboratorsCount = collaborators.filter(c => c.hasLogin).length;
+
   const addCollaborator = (data: CollaboratorData) => {
-    if (collaborators.length < 2) {
-      setCollaborators([...collaborators, data]);
-      reset();
+    if (data.hasLogin && loginCollaboratorsCount >= 2) {
+      toast.error("Você pode adicionar no máximo 2 colaboradores com login");
+      return;
     }
+    setCollaborators([...collaborators, data]);
+    reset();
+    setHasLogin(false);
   };
 
   const removeCollaborator = (index: number) => {
@@ -59,7 +84,7 @@ const AddCollaborators = ({ onNext, onBack, onSkip, initialData }: AddCollaborat
           <div>
             <CardTitle className="text-2xl">Adicionar Colaboradores</CardTitle>
             <CardDescription className="text-muted-foreground">
-              Adicione até 2 colaboradores com acesso ao sistema (opcional)
+              Adicione colaboradores da sua empresa (opcional)
             </CardDescription>
           </div>
         </div>
@@ -74,8 +99,16 @@ const AddCollaborators = ({ onNext, onBack, onSkip, initialData }: AddCollaborat
               >
                 <div>
                   <p className="font-medium text-foreground">{collaborator.name}</p>
-                  <p className="text-sm text-muted-foreground">{collaborator.email}</p>
-                  <p className="text-sm text-muted-foreground">{collaborator.role}</p>
+                  <p className="text-sm text-muted-foreground">Cargo: {collaborator.role}</p>
+                  {collaborator.team && (
+                    <p className="text-xs text-muted-foreground">Time: {collaborator.team}</p>
+                  )}
+                  {collaborator.manager && (
+                    <p className="text-xs text-muted-foreground">Gestor: {collaborator.manager}</p>
+                  )}
+                  {collaborator.hasLogin && (
+                    <p className="text-xs text-primary">✓ Terá login no sistema</p>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
@@ -90,54 +123,117 @@ const AddCollaborators = ({ onNext, onBack, onSkip, initialData }: AddCollaborat
           </div>
         )}
 
-        {collaborators.length < 2 && (
-          <form onSubmit={handleSubmit(addCollaborator)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome do Colaborador</Label>
-              <Input
-                id="name"
-                {...register("name")}
-                placeholder="Nome completo"
-                className="transition-colors"
-              />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
-              )}
-            </div>
+        <form onSubmit={handleSubmit(addCollaborator)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Nome do Colaborador</Label>
+            <Input
+              id="name"
+              {...register("name")}
+              placeholder="Nome completo"
+              className="transition-colors"
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                {...register("email")}
-                placeholder="colaborador@email.com"
-                className="transition-colors"
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="role">Cargo</Label>
+            <Select onValueChange={(value) => setValue("role", value)}>
+              <SelectTrigger className="transition-colors">
+                <SelectValue placeholder="Selecione um cargo" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((role, index) => (
+                  <SelectItem key={index} value={role.title}>
+                    {role.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.role && (
+              <p className="text-sm text-destructive">{errors.role.message}</p>
+            )}
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role">Função</Label>
-              <Input
-                id="role"
-                {...register("role")}
-                placeholder="Ex: Gerente, Analista..."
-                className="transition-colors"
-              />
-              {errors.role && (
-                <p className="text-sm text-destructive">{errors.role.message}</p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="team">Time (opcional)</Label>
+            <Select onValueChange={(value) => setValue("team", value)}>
+              <SelectTrigger className="transition-colors">
+                <SelectValue placeholder="Selecione um time" />
+              </SelectTrigger>
+              <SelectContent>
+                {teams.map((team, index) => (
+                  <SelectItem key={index} value={team.name}>
+                    {team.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <Button type="submit" variant="outline" className="w-full transition-colors">
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Colaborador
-            </Button>
-          </form>
-        )}
+          <div className="space-y-2">
+            <Label htmlFor="manager">Gestor (opcional)</Label>
+            <Input
+              id="manager"
+              {...register("manager")}
+              placeholder="Nome do gestor"
+              className="transition-colors"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2 py-2">
+            <Checkbox
+              id="hasLogin"
+              checked={hasLogin}
+              onCheckedChange={(checked) => {
+                setHasLogin(checked as boolean);
+                setValue("hasLogin", checked as boolean);
+              }}
+              disabled={loginCollaboratorsCount >= 2 && !hasLogin}
+            />
+            <Label htmlFor="hasLogin" className="cursor-pointer">
+              Este colaborador terá login no sistema ({loginCollaboratorsCount}/2)
+            </Label>
+          </div>
+
+          {hasLogin && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register("email")}
+                  placeholder="email@exemplo.com"
+                  className="transition-colors"
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  {...register("password")}
+                  placeholder="Senha de acesso"
+                  className="transition-colors"
+                />
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password.message}</p>
+                )}
+              </div>
+            </>
+          )}
+
+          <Button type="submit" variant="outline" className="w-full transition-colors">
+            <Plus className="w-4 h-4 mr-2" />
+            Adicionar Colaborador
+          </Button>
+        </form>
 
         <div className="flex gap-3 pt-4">
           <Button

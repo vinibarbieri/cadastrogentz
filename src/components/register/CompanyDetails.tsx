@@ -12,9 +12,8 @@ const schema = z.object({
   sector: z.string().optional(),
   description: z.string().optional(),
   address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zipCode: z.string().optional(),
+  financialData: z.string().optional(),
+  companyValues: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -77,47 +76,36 @@ const CompanyDetails = ({ onNext, onBack, onSkip, initialData }: CompanyDetailsP
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="address">Endereço</Label>
-              <Input
-                id="address"
-                {...register("address")}
-                placeholder="Rua, número"
-                className="transition-colors"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="address">Endereço</Label>
+            <Input
+              id="address"
+              {...register("address")}
+              placeholder="Endereço completo da empresa"
+              className="transition-colors"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="city">Cidade</Label>
-              <Input
-                id="city"
-                {...register("city")}
-                placeholder="Cidade"
-                className="transition-colors"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="financialData">Dados Financeiros dos Últimos 12 Meses</Label>
+            <Textarea
+              id="financialData"
+              {...register("financialData")}
+              placeholder="Descreva os dados financeiros..."
+              rows={3}
+              className="transition-colors resize-none"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="state">Estado</Label>
-              <Input
-                id="state"
-                {...register("state")}
-                placeholder="UF"
-                maxLength={2}
-                className="transition-colors"
-              />
-            </div>
-
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="zipCode">CEP</Label>
-              <Input
-                id="zipCode"
-                {...register("zipCode")}
-                placeholder="00000-000"
-                className="transition-colors"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="companyValues">Valores da Empresa</Label>
+            <Textarea
+              id="companyValues"
+              {...register("companyValues")}
+              placeholder="Descreva os valores e princípios da empresa..."
+              rows={3}
+              className="transition-colors resize-none"
+            />
           </div>
 
           <div className="flex gap-3 pt-4">
